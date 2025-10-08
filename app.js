@@ -582,6 +582,30 @@ class AP2Demo {
                     <span>Out of stock</span>
                     <input type="number" step="0.01" min="0" max="1" id="sim_oos" value="${this.scenarioEngine.rates.outOfStockRate}" style="width:120px;" />
                 </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Price change</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_price" value="${this.scenarioEngine.rates.priceChangeRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Shipping recalc</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_ship" value="${this.scenarioEngine.rates.shippingRecalcRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Gas too low</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_gas" value="${this.scenarioEngine.rates.gasTooLowRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Wrong chain</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_chain" value="${this.scenarioEngine.rates.wrongChainRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Settlement delay</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_settle" value="${this.scenarioEngine.rates.settlementDelayRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Reconcile mismatch</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_recon" value="${this.scenarioEngine.rates.reconciliationMismatchRate}" style="width:120px;" />
+                </label>
                 <button class="btn btn--secondary btn--sm" id="sim_apply">Apply</button>
             </div>
         `);
@@ -594,6 +618,12 @@ class AP2Demo {
                 const d51El = document.getElementById('sim_decline_51');
                 const d59El = document.getElementById('sim_decline_59');
                 const oosEl = document.getElementById('sim_oos');
+                const priceEl = document.getElementById('sim_price');
+                const shipEl = document.getElementById('sim_ship');
+                const gasEl = document.getElementById('sim_gas');
+                const chainEl = document.getElementById('sim_chain');
+                const settleEl = document.getElementById('sim_settle');
+                const reconEl = document.getElementById('sim_recon');
                 const seed = parseInt(seedEl.value, 10);
                 if (!Number.isNaN(seed)) this.scenarioEngine.seed = seed;
                 const otp = parseFloat(otpEl.value);
@@ -601,11 +631,23 @@ class AP2Demo {
                 const d51 = parseFloat(d51El.value);
                 const d59 = parseFloat(d59El.value);
                 const oos = parseFloat(oosEl.value);
+                const price = parseFloat(priceEl.value);
+                const ship = parseFloat(shipEl.value);
+                const gas = parseFloat(gasEl.value);
+                const chain = parseFloat(chainEl.value);
+                const settle = parseFloat(settleEl.value);
+                const recon = parseFloat(reconEl.value);
                 if (!Number.isNaN(otp)) this.scenarioEngine.rates.otpDeliveryFailRate = Math.min(Math.max(otp, 0), 1);
                 if (!Number.isNaN(net)) this.scenarioEngine.rates.networkDropRate = Math.min(Math.max(net, 0), 1);
                 if (!Number.isNaN(d51)) this.scenarioEngine.rates.cardDeclineInsufficientFundsRate = Math.min(Math.max(d51, 0), 1);
                 if (!Number.isNaN(d59)) this.scenarioEngine.rates.cardDeclineSuspectedFraudRate = Math.min(Math.max(d59, 0), 1);
                 if (!Number.isNaN(oos)) this.scenarioEngine.rates.outOfStockRate = Math.min(Math.max(oos, 0), 1);
+                if (!Number.isNaN(price)) this.scenarioEngine.rates.priceChangeRate = Math.min(Math.max(price, 0), 1);
+                if (!Number.isNaN(ship)) this.scenarioEngine.rates.shippingRecalcRate = Math.min(Math.max(ship, 0), 1);
+                if (!Number.isNaN(gas)) this.scenarioEngine.rates.gasTooLowRate = Math.min(Math.max(gas, 0), 1);
+                if (!Number.isNaN(chain)) this.scenarioEngine.rates.wrongChainRate = Math.min(Math.max(chain, 0), 1);
+                if (!Number.isNaN(settle)) this.scenarioEngine.rates.settlementDelayRate = Math.min(Math.max(settle, 0), 1);
+                if (!Number.isNaN(recon)) this.scenarioEngine.rates.reconciliationMismatchRate = Math.min(Math.max(recon, 0), 1);
                 this.addToTimeline('Simulator Updated', `Seed=${this.scenarioEngine.seed}, OTP=${this.scenarioEngine.rates.otpDeliveryFailRate}, Net=${this.scenarioEngine.rates.networkDropRate}`);
             });
         }
