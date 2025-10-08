@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  ap2-demo:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
+
+  mock-api:
+    image: node:18-alpine
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api:/app
+    working_dir: /app
+    command: ["node", "server.js"]
+    depends_on:
+      - ap2-demo
+    environment:
+      - NODE_ENV=development

@@ -1,0 +1,22 @@
+# Logs
+logs/
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-*.log*
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+
+# Env
+.env
+.env.*
+
+# Build
+/dist/
+/build/

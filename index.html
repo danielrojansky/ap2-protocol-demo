@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP2 Protocol Demo</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <h1 class="header__title">AP2 Protocol Demo</h1>
+                <nav class="nav">
+                    <button class="nav__tab nav__tab--active" data-tab="shop">Shop Interface</button>
+                    <button class="nav__tab" data-tab="agent">Agent Interface</button>
+                    <button class="nav__tab" data-tab="mandates">Mandate Inspector</button>
+                    <button class="nav__tab" data-tab="flow">Flow Visualizer</button>
+                    <button class="nav__tab" data-tab="api">API Docs</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Shop Interface Tab -->
+        <div class="tab-content tab-content--active" id="shop-tab">
+            <div class="container">
+                <div class="shop-layout">
+                    <div class="shop-main">
+                        <div class="section">
+                            <h2>Product Catalog</h2>
+                            <div class="filters">
+                                <select class="form-control filter-select" id="category-filter">
+                                    <option value="">All Categories</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="appliances">Appliances</option>
+                                    <option value="accessories">Accessories</option>
+                                </select>
+                                <input type="range" class="price-filter" id="price-filter" min="0" max="200" value="200">
+                                <span class="price-display">Max: $<span id="price-value">200</span></span>
+                            </div>
+                            <div class="product-grid" id="product-grid">
+                                <!-- Products will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="shop-sidebar">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Shopping Cart</h3>
+                            </div>
+                            <div class="card__body">
+                                <div id="cart-items">
+                                    <p class="text-secondary">Cart is empty</p>
+                                </div>
+                                <div class="cart-total" id="cart-total" style="display: none;">
+                                    <strong>Total: $<span id="total-amount">0.00</span></strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-16">
+                            <div class="card__header">
+                                <h3>Agent Request Monitor</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="agent-monitor" id="agent-monitor">
+                                    <p class="text-secondary">No agent requests</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-16">
+                            <div class="card__header">
+                                <h3>Merchant Agent Status</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="agent-status">
+                                    <div class="status status--success">Online</div>
+                                    <p class="text-secondary mt-8">Ready to process requests</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Interface Tab -->
+        <div class="tab-content" id="agent-tab">
+            <div class="container">
+                <div class="agent-layout">
+                    <div class="agent-main">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Shopping Agent Chat</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="chat-history" id="chat-history">
+                                    <div class="chat-message chat-message--system">
+                                        <strong>Shopping Agent:</strong> Hello! I'm your AI shopping assistant. Tell me what you'd like to buy.
+                                    </div>
+                                </div>
+                                <div class="chat-input-container">
+                                    <div class="sample-prompts">
+                                        <p class="text-secondary">Try these prompts:</p>
+                                        <div class="prompt-buttons" id="prompt-buttons">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-8">
+                                        <input type="text" class="form-control" id="chat-input" placeholder="Type your shopping request...">
+                                        <button class="btn btn--primary" id="send-message">Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="agent-sidebar">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Agent Status</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="agent-list" id="agent-list">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-16">
+                            <div class="card__header">
+                                <h3>Current Mandate</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="mandate-preview" id="mandate-preview">
+                                    <p class="text-secondary">No active mandate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mandate Inspector Tab -->
+        <div class="tab-content" id="mandates-tab">
+            <div class="container">
+                <div class="inspector-layout">
+                    <div class="inspector-main">
+                        <div class="card">
+                            <div class="card__header">
+                                <div class="flex justify-between items-center">
+                                    <h3>Mandate Inspector</h3>
+                                    <div class="inspector-controls">
+                                        <select class="form-control" id="mandate-type-filter">
+                                            <option value="all">All Mandates</option>
+                                            <option value="intent">Intent Mandates</option>
+                                            <option value="cart">Cart Mandates</option>
+                                            <option value="payment">Payment Mandates</option>
+                                        </select>
+                                        <button class="btn btn--secondary btn--sm" id="export-mandates">Export</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card__body">
+                                <div class="mandate-tabs">
+                                    <button class="mandate-tab mandate-tab--active" data-mandate="intent">Intent</button>
+                                    <button class="mandate-tab" data-mandate="cart">Cart</button>
+                                    <button class="mandate-tab" data-mandate="payment">Payment</button>
+                                </div>
+                                <div class="mandate-content">
+                                    <div class="mandate-panel mandate-panel--active" id="intent-mandate-panel">
+                                        <pre class="mandate-json" id="intent-mandate-json">No intent mandate generated yet</pre>
+                                    </div>
+                                    <div class="mandate-panel" id="cart-mandate-panel">
+                                        <pre class="mandate-json" id="cart-mandate-json">No cart mandate generated yet</pre>
+                                    </div>
+                                    <div class="mandate-panel" id="payment-mandate-panel">
+                                        <pre class="mandate-json" id="payment-mandate-json">No payment mandate generated yet</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inspector-sidebar">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Validation Status</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="validation-status" id="validation-status">
+                                    <div class="validation-item">
+                                        <span>Intent Signature:</span>
+                                        <span class="status status--info" id="intent-validation">Pending</span>
+                                    </div>
+                                    <div class="validation-item">
+                                        <span>Cart Signature:</span>
+                                        <span class="status status--info" id="cart-validation">Pending</span>
+                                    </div>
+                                    <div class="validation-item">
+                                        <span>Payment Auth:</span>
+                                        <span class="status status--info" id="payment-validation">Pending</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-16">
+                            <div class="card__header">
+                                <h3>Mandate Chain</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="mandate-chain" id="mandate-chain">
+                                    <div class="chain-item">
+                                        <div class="chain-step">1</div>
+                                        <span>Intent Creation</span>
+                                    </div>
+                                    <div class="chain-item">
+                                        <div class="chain-step">2</div>
+                                        <span>Cart Generation</span>
+                                    </div>
+                                    <div class="chain-item">
+                                        <div class="chain-step">3</div>
+                                        <span>Payment Authorization</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flow Visualizer Tab -->
+        <div class="tab-content" id="flow-tab">
+            <div class="container">
+                <div class="flow-layout">
+                    <div class="card">
+                        <div class="card__header">
+                            <h3>AP2 Protocol Flow</h3>
+                        </div>
+                        <div class="card__body">
+                            <div class="flow-diagram" id="flow-diagram">
+                                <div class="flow-step" data-step="1">
+                                    <div class="step-number">1</div>
+                                    <div class="step-content">
+                                        <h4>User Intent</h4>
+                                        <p>User expresses shopping intent</p>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-step" data-step="2">
+                                    <div class="step-number">2</div>
+                                    <div class="step-content">
+                                        <h4>Intent Mandate</h4>
+                                        <p>Shopping agent creates intent mandate</p>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-step" data-step="3">
+                                    <div class="step-number">3</div>
+                                    <div class="step-content">
+                                        <h4>Product Search</h4>
+                                        <p>Merchant agent searches products</p>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-step" data-step="4">
+                                    <div class="step-number">4</div>
+                                    <div class="step-content">
+                                        <h4>Cart Creation</h4>
+                                        <p>Generate cart mandate options</p>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-step" data-step="5">
+                                    <div class="step-number">5</div>
+                                    <div class="step-content">
+                                        <h4>Payment Authorization</h4>
+                                        <p>Create payment mandate</p>
+                                    </div>
+                                </div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-step" data-step="6">
+                                    <div class="step-number">6</div>
+                                    <div class="step-content">
+                                        <h4>Transaction Complete</h4>
+                                        <p>Process payment and generate receipt</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-timeline">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Transaction Timeline</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="timeline" id="timeline">
+                                    <p class="text-secondary">No active transactions</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Docs Tab -->
+        <div class="tab-content" id="api-tab">
+            <div class="container">
+                <div class="api-layout">
+                    <div class="api-main">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>AP2 Protocol API Documentation</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="api-section">
+                                    <h4>Agent Endpoints</h4>
+                                    <div class="api-endpoint">
+                                        <div class="endpoint-header">
+                                            <span class="method method--post">POST</span>
+                                            <span class="endpoint-path">/api/agents/shopping/intent</span>
+                                        </div>
+                                        <p>Create an intent mandate from natural language description</p>
+                                        <details>
+                                            <summary>Example Request</summary>
+                                            <pre class="code-block">{
+  "description": "I want to buy wireless headphones under $100",
+  "max_amount": 100,
+  "categories": ["electronics"],
+  "user_id": "user_123"
+}</pre>
+                                        </details>
+                                    </div>
+
+                                    <div class="api-endpoint">
+                                        <div class="endpoint-header">
+                                            <span class="method method--post">POST</span>
+                                            <span class="endpoint-path">/api/agents/merchant/search</span>
+                                        </div>
+                                        <p>Search products based on intent mandate</p>
+                                        <details>
+                                            <summary>Example Request</summary>
+                                            <pre class="code-block">{
+  "intent_mandate_id": "intent_123",
+  "search_terms": ["wireless", "headphones"],
+  "max_price": 100
+}</pre>
+                                        </details>
+                                    </div>
+
+                                    <div class="api-endpoint">
+                                        <div class="endpoint-header">
+                                            <span class="method method--post">POST</span>
+                                            <span class="endpoint-path">/api/agents/payment/process</span>
+                                        </div>
+                                        <p>Process payment with mandate authorization</p>
+                                        <details>
+                                            <summary>Example Request</summary>
+                                            <pre class="code-block">{
+  "payment_mandate_id": "payment_123",
+  "otp_code": "123456",
+  "risk_data": {...}
+}</pre>
+                                        </details>
+                                    </div>
+                                </div>
+
+                                <div class="api-section">
+                                    <h4>Mandate Structure</h4>
+                                    <div class="mandate-structure">
+                                        <h5>Intent Mandate</h5>
+                                        <pre class="code-block">{
+  "id": "uuid",
+  "user_cart_confirmation_required": true,
+  "natural_language_description": "string",
+  "max_amount": "number",
+  "merchants": ["array"],
+  "categories": ["array"],
+  "intent_expiry": "ISO8601",
+  "user_signature": "string",
+  "timestamp": "ISO8601"
+}</pre>
+
+                                        <h5>Cart Mandate</h5>
+                                        <pre class="code-block">{
+  "contents": {
+    "id": "uuid",
+    "items": ["array"],
+    "subtotal": "number",
+    "tax": "number", 
+    "shipping": "number",
+    "total": "number",
+    "currency": "USD",
+    "merchant_name": "string",
+    "cart_expiry": "ISO8601",
+    "payment_methods_accepted": ["array"]
+  },
+  "merchant_authorization": "JWT signature",
+  "timestamp": "ISO8601"
+}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Payment Flow -->
+    <div class="modal hidden" id="payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Payment Authorization</h3>
+                <button class="modal-close" id="close-payment-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-step" id="payment-method-step">
+                    <h4>Select Payment Method</h4>
+                    <div class="payment-methods" id="payment-methods">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="payment-step hidden" id="otp-step">
+                    <h4>Enter OTP Code</h4>
+                    <p>A verification code has been sent to your device.</p>
+                    <input type="text" class="form-control" id="otp-input" placeholder="Enter 6-digit code" maxlength="6">
+                    <div class="flex gap-8 mt-16">
+                        <button class="btn btn--secondary" id="cancel-payment">Cancel</button>
+                        <button class="btn btn--primary" id="verify-otp">Verify</button>
+                    </div>
+                </div>
+                <div class="payment-step hidden" id="success-step">
+                    <div class="success-message">
+                        <h4>Payment Successful!</h4>
+                        <p>Your transaction has been completed.</p>
+                        <div class="receipt" id="receipt">
+                            <!-- Receipt details will be populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
