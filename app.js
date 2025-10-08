@@ -570,6 +570,18 @@ class AP2Demo {
                     <span>Network drop rate</span>
                     <input type="number" step="0.01" min="0" max="1" id="sim_net_rate" value="${this.scenarioEngine.rates.networkDropRate}" style="width:120px;" />
                 </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Card decline (51)</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_decline_51" value="${this.scenarioEngine.rates.cardDeclineInsufficientFundsRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Card decline (59)</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_decline_59" value="${this.scenarioEngine.rates.cardDeclineSuspectedFraudRate}" style="width:120px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Out of stock</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_oos" value="${this.scenarioEngine.rates.outOfStockRate}" style="width:120px;" />
+                </label>
                 <button class="btn btn--secondary btn--sm" id="sim_apply">Apply</button>
             </div>
         `);
@@ -579,12 +591,21 @@ class AP2Demo {
                 const seedEl = document.getElementById('sim_seed');
                 const otpEl = document.getElementById('sim_otp_rate');
                 const netEl = document.getElementById('sim_net_rate');
+                const d51El = document.getElementById('sim_decline_51');
+                const d59El = document.getElementById('sim_decline_59');
+                const oosEl = document.getElementById('sim_oos');
                 const seed = parseInt(seedEl.value, 10);
                 if (!Number.isNaN(seed)) this.scenarioEngine.seed = seed;
                 const otp = parseFloat(otpEl.value);
                 const net = parseFloat(netEl.value);
+                const d51 = parseFloat(d51El.value);
+                const d59 = parseFloat(d59El.value);
+                const oos = parseFloat(oosEl.value);
                 if (!Number.isNaN(otp)) this.scenarioEngine.rates.otpDeliveryFailRate = Math.min(Math.max(otp, 0), 1);
                 if (!Number.isNaN(net)) this.scenarioEngine.rates.networkDropRate = Math.min(Math.max(net, 0), 1);
+                if (!Number.isNaN(d51)) this.scenarioEngine.rates.cardDeclineInsufficientFundsRate = Math.min(Math.max(d51, 0), 1);
+                if (!Number.isNaN(d59)) this.scenarioEngine.rates.cardDeclineSuspectedFraudRate = Math.min(Math.max(d59, 0), 1);
+                if (!Number.isNaN(oos)) this.scenarioEngine.rates.outOfStockRate = Math.min(Math.max(oos, 0), 1);
                 this.addToTimeline('Simulator Updated', `Seed=${this.scenarioEngine.seed}, OTP=${this.scenarioEngine.rates.otpDeliveryFailRate}, Net=${this.scenarioEngine.rates.networkDropRate}`);
             });
         }
@@ -1268,7 +1289,16 @@ class ScenarioEngine {
         };
         this.rates = {
             otpDeliveryFailRate: 0.05,
-            networkDropRate: 0.02
+            networkDropRate: 0.02,
+            outOfStockRate: 0.2,
+            priceChangeRate: 0.2,
+            shippingRecalcRate: 0.2,
+            cardDeclineInsufficientFundsRate: 0.15,
+            cardDeclineSuspectedFraudRate: 0.05,
+            gasTooLowRate: 0.1,
+            wrongChainRate: 0.1,
+            settlementDelayRate: 0.2,
+            reconciliationMismatchRate: 0.1
         };
         this.seed = 42;
     }
@@ -1283,7 +1313,16 @@ class ScenarioEngine {
         if (!this.flags.randomize) return true;
         const rateKeyMap = {
             otpFail: 'otpDeliveryFailRate',
-            networkError: 'networkDropRate'
+            networkError: 'networkDropRate',
+            outOfStock: 'outOfStockRate',
+            priceChange: 'priceChangeRate',
+            shippingRecalc: 'shippingRecalcRate',
+            cardDecline_insufficientFunds: 'cardDeclineInsufficientFundsRate',
+            cardDecline_suspectedFraud: 'cardDeclineSuspectedFraudRate',
+            gasTooLow: 'gasTooLowRate',
+            wrongChain: 'wrongChainRate',
+            settlementDelay: 'settlementDelayRate',
+            reconciliationMismatch: 'reconciliationMismatchRate'
         };
         const mapped = rateKeyMap[key];
         const rate = (mapped ? this.rates[mapped] : undefined) ?? this.rates[key] ?? 0.1;
@@ -1306,5 +1345,26 @@ class ScenarioEngine {
             updated.total = Math.round((updated.subtotal + updated.tax + updated.shipping) * 100) / 100;
         }
         return updated;
+    }
+
+    applyAuth(paymentMandate) {
+        if (this.shouldTrigger('networkError')) return { error: 'NETWORK_ERROR' };
+        if (this.shouldTrigger('cardDecline_insufficientFunds')) return { decline: '51' };
+        if (this.shouldTrigger('cardDecline_suspectedFraud')) return { decline: '59' };
+        if (this.shouldTrigger('otpFail')) return { otp: 'FAILED' };
+        return { ok: true };
+    }
+
+    applyCrypto(tx) {
+        if (this.shouldTrigger('gasTooLow')) return { error: 'GAS_TOO_LOW' };
+        if (this.shouldTrigger('wrongChain')) return { error: 'WRONG_CHAIN' };
+        return { ok: true };
+    }
+
+    applyPostAuth(tx) {
+        const out = { ...tx };
+        if (this.shouldTrigger('settlementDelay')) out.settlement_eta_minutes = 120;
+        if (this.shouldTrigger('reconciliationMismatch')) out.reconcile_hint = 'MISMATCH';
+        return out;
     }
 }
