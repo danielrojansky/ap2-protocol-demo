@@ -554,6 +554,40 @@ class AP2Demo {
         mkToggle('wrongChain', 'Crypto: wrong chain');
         mkToggle('settlementDelay', 'Settlement delay');
         mkToggle('reconciliationMismatch', 'Reconciliation mismatch');
+
+        // Controls for seed and basic rates
+        sc.insertAdjacentHTML('beforeend', `
+            <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Seed</span>
+                    <input type="number" id="sim_seed" value="${this.scenarioEngine.seed}" style="width:100px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>OTP fail rate</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_otp_rate" value="${this.scenarioEngine.rates.otpDeliveryFailRate}" style="width:100px;" />
+                </label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span>Network drop rate</span>
+                    <input type="number" step="0.01" min="0" max="1" id="sim_net_rate" value="${this.scenarioEngine.rates.networkDropRate}" style="width:120px;" />
+                </label>
+                <button class="btn btn--secondary btn--sm" id="sim_apply">Apply</button>
+            </div>
+        `);
+        const applyBtn = document.getElementById('sim_apply');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                const seedEl = document.getElementById('sim_seed');
+                const otpEl = document.getElementById('sim_otp_rate');
+                const netEl = document.getElementById('sim_net_rate');
+                const seed = parseInt(seedEl.value, 10);
+                if (!Number.isNaN(seed)) this.scenarioEngine.seed = seed;
+                const otp = parseFloat(otpEl.value);
+                const net = parseFloat(netEl.value);
+                if (!Number.isNaN(otp)) this.scenarioEngine.rates.otpDeliveryFailRate = Math.min(Math.max(otp, 0), 1);
+                if (!Number.isNaN(net)) this.scenarioEngine.rates.networkDropRate = Math.min(Math.max(net, 0), 1);
+                this.addToTimeline('Simulator Updated', `Seed=${this.scenarioEngine.seed}, OTP=${this.scenarioEngine.rates.otpDeliveryFailRate}, Net=${this.scenarioEngine.rates.networkDropRate}`);
+            });
+        }
     }
 
     initReports() {
@@ -1247,7 +1281,12 @@ class ScenarioEngine {
     shouldTrigger(key) {
         if (!this.flags[key]) return false;
         if (!this.flags.randomize) return true;
-        const rate = this.rates[key] || 0.1;
+        const rateKeyMap = {
+            otpFail: 'otpDeliveryFailRate',
+            networkError: 'networkDropRate'
+        };
+        const mapped = rateKeyMap[key];
+        const rate = (mapped ? this.rates[mapped] : undefined) ?? this.rates[key] ?? 0.1;
         return this.random() < rate;
     }
 
