@@ -18,7 +18,17 @@
                     <button class="nav__tab" data-tab="mandates">Mandate Inspector</button>
                     <button class="nav__tab" data-tab="flow">Flow Visualizer</button>
                     <button class="nav__tab" data-tab="api">API Docs</button>
+                    <button class="nav__tab" data-tab="checkout">Checkout</button>
+                    <button class="nav__tab" data-tab="dashboard">Executive Dashboard</button>
+                    <button class="nav__tab" data-tab="risk">Risk & Compliance</button>
+                    <button class="nav__tab" data-tab="payments">Payments Ops</button>
+                    <button class="nav__tab" data-tab="simulator">Scenario Simulator</button>
+                    <button class="nav__tab" data-tab="reports">Reports</button>
+                    <button class="nav__tab" data-tab="admin">Admin & Settings</button>
                 </nav>
+                <div>
+                    <button class="btn btn--outline btn--sm" id="reset-app">Reset</button>
+                </div>
             </div>
         </div>
     </header>
@@ -409,6 +419,129 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout Management Tab -->
+        <div class="tab-content" id="checkout-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header">
+                        <div class="flex justify-between items-center">
+                            <h3>Checkout Cart Management</h3>
+                            <div>
+                                <button class="btn btn--secondary btn--sm" id="checkout-continue-shopping">Continue Shopping</button>
+                                <button class="btn btn--primary btn--sm" id="checkout-proceed">Proceed to Payment</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card__body">
+                        <div id="checkout-empty" class="text-secondary">Your cart is empty.</div>
+                        <div id="checkout-table-wrapper" style="display:none; overflow-x:auto;">
+                            <table class="checkout-table" style="width:100%; border-collapse:collapse;">
+                                <thead>
+                                    <tr style="text-align:left; border-bottom:1px solid var(--color-border);">
+                                        <th style="padding:8px;">Item</th>
+                                        <th style="padding:8px;">Price</th>
+                                        <th style="padding:8px;">Quantity</th>
+                                        <th style="padding:8px;">Total</th>
+                                        <th style="padding:8px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="checkout-table-body"></tbody>
+                            </table>
+                            <div class="cart-total" style="margin-top:12px;">
+                                <strong>Subtotal: $<span id="checkout-subtotal">0.00</span></strong>
+                                <div class="text-secondary" style="margin-top:4px;">Tax (8%): $<span id="checkout-tax">0.00</span> · Shipping: $<span id="checkout-shipping">0.00</span></div>
+                                <div style="margin-top:8px; font-size:16px;"><strong>Grand Total: $<span id="checkout-grandtotal">0.00</span></strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Dashboard Tab -->
+        <div class="tab-content" id="dashboard-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Executive Dashboard</h3></div>
+                    <div class="card__body">
+                        <div id="dashboard-root">
+                            <!-- KPI cards and charts will render here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk & Compliance Tab -->
+        <div class="tab-content" id="risk-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Risk & Compliance</h3></div>
+                    <div class="card__body">
+                        <div id="risk-root">
+                            <!-- Risk log and policy editor -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Ops Tab -->
+        <div class="tab-content" id="payments-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Payments Operations</h3></div>
+                    <div class="card__body">
+                        <div id="payments-root">
+                            <!-- Transaction list and actions -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scenario Simulator Tab -->
+        <div class="tab-content" id="simulator-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Scenario Simulator</h3></div>
+                    <div class="card__body">
+                        <div id="simulator-root">
+                            <!-- Simulator controls and logs -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div class="tab-content" id="reports-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Reports</h3></div>
+                    <div class="card__body">
+                        <div id="reports-root">
+                            <!-- Reports builder and export -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin & Settings Tab -->
+        <div class="tab-content" id="admin-tab">
+            <div class="container">
+                <div class="card">
+                    <div class="card__header"><h3>Admin & Settings</h3></div>
+                    <div class="card__body">
+                        <div id="admin-root">
+                            <!-- Agent config, feature flags -->
                         </div>
                     </div>
                 </div>

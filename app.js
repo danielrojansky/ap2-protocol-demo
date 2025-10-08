@@ -148,7 +148,14 @@ class AP2Demo {
             ]
         };
 
-        this.state = {
+        this.state = this.buildInitialState();
+        this.scenarioEngine = new ScenarioEngine();
+
+        this.init();
+    }
+
+    buildInitialState() {
+        return {
             currentTab: 'shop',
             cart: [],
             currentMandates: {
@@ -158,7 +165,7 @@ class AP2Demo {
             },
             agentStatus: {
                 shopping_agent: 'online',
-                merchant_agent: 'online', 
+                merchant_agent: 'online',
                 payment_processor: 'online',
                 credentials_provider: 'online'
             },
@@ -172,8 +179,6 @@ class AP2Demo {
             ],
             selectedPaymentMethod: null
         };
-
-        this.init();
     }
 
     init() {
@@ -183,6 +188,14 @@ class AP2Demo {
         this.renderPromptButtons();
         this.updateFlowVisualization();
         this.renderMandateInspector();
+        // Initialize enhanced modules (no-op placeholders to avoid breaking existing UI)
+        this.initDashboard();
+        this.initRiskConsole();
+        this.initPaymentsOps();
+        this.initMandateOps();
+        this.initSimulator();
+        this.initReports();
+        this.initAdmin();
     }
 
     setupEventListeners() {
@@ -215,6 +228,12 @@ class AP2Demo {
         document.getElementById('close-payment-modal').addEventListener('click', () => this.closePaymentModal());
         document.getElementById('cancel-payment').addEventListener('click', () => this.closePaymentModal());
         document.getElementById('verify-otp').addEventListener('click', () => this.verifyOTP());
+
+        // Reset button
+        const resetBtn = document.getElementById('reset-app');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.resetApp());
+        }
     }
 
     switchTab(tabName) {
@@ -231,6 +250,12 @@ class AP2Demo {
         document.getElementById(`${tabName}-tab`).classList.add('tab-content--active');
 
         this.state.currentTab = tabName;
+
+        // If navigating to checkout, render checkout view
+        if (tabName === 'checkout') {
+            this.renderCheckout();
+        }
+        // No special side effects for other new tabs
     }
 
     renderProducts() {
@@ -323,6 +348,243 @@ class AP2Demo {
 
         totalAmount.textContent = total.toFixed(2);
         cartTotal.style.display = 'block';
+    }
+
+    resetApp() {
+        // Close any open modals
+        this.closePaymentModal();
+
+        // Reset state
+        this.state = this.buildInitialState();
+
+        // Reset UI sections
+        // Chat
+        const chatHistory = document.getElementById('chat-history');
+        if (chatHistory) {
+            chatHistory.innerHTML = `
+                <div class="chat-message chat-message--system">
+                    <strong>Shopping Agent:</strong> Hello! I'm your AI shopping assistant. Tell me what you'd like to buy.
+                </div>
+            `;
+        }
+
+        // Cart sidebar
+        const cartItems = document.getElementById('cart-items');
+        if (cartItems) cartItems.innerHTML = '<p class="text-secondary">Cart is empty</p>';
+        const cartTotal = document.getElementById('cart-total');
+        if (cartTotal) cartTotal.style.display = 'none';
+
+        // Timeline
+        const timeline = document.getElementById('timeline');
+        if (timeline) timeline.innerHTML = '<p class="text-secondary">No active transactions</p>';
+
+        // Agent monitor
+        const monitor = document.getElementById('agent-monitor');
+        if (monitor) monitor.innerHTML = '<p class="text-secondary">No agent requests</p>';
+
+        // Mandate inspector
+        this.renderMandateInspector();
+        this.updateFlowVisualization();
+
+        // Checkout tab (if open)
+        const checkoutEmpty = document.getElementById('checkout-empty');
+        const checkoutWrap = document.getElementById('checkout-table-wrapper');
+        if (checkoutEmpty) checkoutEmpty.style.display = 'block';
+        if (checkoutWrap) checkoutWrap.style.display = 'none';
+
+        // Return to Shop tab
+        this.switchTab('shop');
+    }
+
+    // Checkout management rendering
+    renderCheckout() {
+        const emptyEl = document.getElementById('checkout-empty');
+        const tableWrap = document.getElementById('checkout-table-wrapper');
+        const tbody = document.getElementById('checkout-table-body');
+        const subtotalEl = document.getElementById('checkout-subtotal');
+        const taxEl = document.getElementById('checkout-tax');
+        const shippingEl = document.getElementById('checkout-shipping');
+        const grandTotalEl = document.getElementById('checkout-grandtotal');
+
+        if (!emptyEl || !tableWrap) return; // Not on page yet
+
+        if (this.state.cart.length === 0) {
+            emptyEl.style.display = 'block';
+            tableWrap.style.display = 'none';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        tableWrap.style.display = 'block';
+
+        tbody.innerHTML = this.state.cart.map(item => {
+            const lineTotal = (item.price * item.quantity).toFixed(2);
+            return `
+                <tr data-id="${item.id}" style="border-bottom:1px solid var(--color-card-border-inner);">
+                    <td style="padding:8px;">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="text-secondary">Unit: $${item.price.toFixed(2)}</div>
+                    </td>
+                    <td style="padding:8px;">$${item.price.toFixed(2)}</td>
+                    <td style="padding:8px;">
+                        <div class="flex gap-8">
+                            <button class="btn btn--secondary btn--sm" data-action="decrement">-</button>
+                            <span style="min-width:24px; text-align:center;">${item.quantity}</span>
+                            <button class="btn btn--secondary btn--sm" data-action="increment">+</button>
+                        </div>
+                    </td>
+                    <td style="padding:8px;">$${lineTotal}</td>
+                    <td style="padding:8px;">
+                        <button class="btn btn--outline btn--sm" data-action="remove">Remove</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Attach action handlers
+        tbody.querySelectorAll('button[data-action]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tr = e.target.closest('tr');
+                const id = tr?.dataset.id;
+                if (!id) return;
+                const action = e.target.getAttribute('data-action');
+                if (action === 'increment') this.updateCartItemQuantity(id, 1);
+                if (action === 'decrement') this.updateCartItemQuantity(id, -1);
+                if (action === 'remove') this.removeFromCart(id);
+                this.renderCheckout();
+                this.updateCart();
+            });
+        });
+
+        const subtotal = this.state.cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        const tax = subtotal * 0.08;
+        const shipping = subtotal > 50 ? 0 : (this.state.cart.length > 0 ? 9.99 : 0);
+        const grand = subtotal + tax + shipping;
+
+        subtotalEl.textContent = subtotal.toFixed(2);
+        taxEl.textContent = tax.toFixed(2);
+        shippingEl.textContent = shipping.toFixed(2);
+        grandTotalEl.textContent = grand.toFixed(2);
+
+        // Top action buttons
+        const continueBtn = document.getElementById('checkout-continue-shopping');
+        const proceedBtn = document.getElementById('checkout-proceed');
+        if (continueBtn) continueBtn.onclick = () => this.switchTab('shop');
+        if (proceedBtn) proceedBtn.onclick = () => this.manualCheckout();
+    }
+
+    updateCartItemQuantity(productId, delta) {
+        const item = this.state.cart.find(i => i.id === productId);
+        if (!item) return;
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+            this.state.cart = this.state.cart.filter(i => i.id !== productId);
+        }
+    }
+
+    removeFromCart(productId) {
+        this.state.cart = this.state.cart.filter(i => i.id !== productId);
+        this.addToTimeline('Item removed', `Removed product ${productId} from cart`);
+        this.addAgentRequest(`Cart item removed: ${productId}`);
+    }
+
+    manualCheckout() {
+        // Ensure cart mandate exists from current cart contents
+        const products = this.state.cart.map(({ id, name, price }) => ({ id, name, price }));
+        if (products.length === 0) return;
+        // Apply scenario pre-checkout adjustments
+        const cartMandate = this.createCartMandate(products);
+        cartMandate.contents = this.scenarioEngine.applyPreCheckout(cartMandate.contents);
+        this.state.currentMandates.cart = cartMandate;
+        this.updateMandateInspector();
+        this.initiatePayment();
+    }
+
+    // Enhanced modules - safe placeholders
+    initDashboard() {
+        const root = document.getElementById('dashboard-root');
+        if (!root) return;
+        root.innerHTML = '<div class="text-secondary">KPIs and charts will appear here.</div>';
+    }
+
+    initRiskConsole() {
+        const root = document.getElementById('risk-root');
+        if (!root) return;
+        root.innerHTML = '<div class="text-secondary">Risk log and policy editor coming soon.</div>';
+    }
+
+    initPaymentsOps() {
+        const root = document.getElementById('payments-root');
+        if (!root) return;
+        root.innerHTML = '<div class="text-secondary">Transactions will list here.</div>';
+    }
+
+    initMandateOps() {
+        const root = document.getElementById('mandates-root');
+        if (!root) return;
+        root.innerHTML = '<div class="text-secondary">Mandate registry viewer coming soon.</div>';
+    }
+
+    initSimulator() {
+        const root = document.getElementById('simulator-root');
+        if (!root) return;
+        root.innerHTML = '<div id="simControls"></div>';
+        this.renderSimulatorControls();
+    }
+
+    renderSimulatorControls() {
+        const sc = document.getElementById('simControls');
+        if (!sc) return;
+        sc.innerHTML = '';
+        const mkToggle = (key, label) => {
+            const id = `sim_${key}`;
+            sc.insertAdjacentHTML('beforeend', `<label style="display:inline-flex; align-items:center; gap:6px; margin:4px 8px 4px 0;"><input type="checkbox" id="${id}"> ${label}</label>`);
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', (e) => { this.scenarioEngine.flags[key] = e.target.checked; });
+        };
+        mkToggle('randomize', 'Randomize');
+        mkToggle('outOfStock', 'Out of stock');
+        mkToggle('priceChange', 'Price change');
+        mkToggle('shippingRecalc', 'Shipping recalculation');
+        mkToggle('cardDecline_insufficientFunds', 'Card decline: Insufficient funds');
+        mkToggle('cardDecline_suspectedFraud', 'Card decline: Suspected fraud');
+        mkToggle('otpFail', 'OTP fail');
+        mkToggle('networkError', 'Network error');
+        mkToggle('gasTooLow', 'Crypto: gas too low');
+        mkToggle('wrongChain', 'Crypto: wrong chain');
+        mkToggle('settlementDelay', 'Settlement delay');
+        mkToggle('reconciliationMismatch', 'Reconciliation mismatch');
+    }
+
+    initReports() {
+        const root = document.getElementById('reports-root');
+        if (!root) return;
+        root.innerHTML = '<button class="btn btn--secondary btn--sm" id="exportCsv">Export CSV</button>';
+        const btn = document.getElementById('exportCsv');
+        if (btn) btn.addEventListener('click', () => this.exportCsv());
+    }
+
+    exportCsv() {
+        const lines = ['timestamp,event,description'];
+        this.state.timeline.forEach(t => {
+            const row = `${t.timestamp},${t.event.replaceAll(',', ';')},${t.description.replaceAll(',', ';')}`;
+            lines.push(row);
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ap2_timeline_${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    initAdmin() {
+        const root = document.getElementById('admin-root');
+        if (!root) return;
+        root.innerHTML = '<div class="text-secondary">Feature flags and settings will appear here.</div>';
     }
 
     addAgentRequest(message) {
@@ -901,3 +1163,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Make demo available globally for onclick handlers
 window.demo = demo;
+
+// ScenarioEngine implementation
+class ScenarioEngine {
+    constructor() {
+        this.flags = {
+            randomize: false,
+            outOfStock: false,
+            priceChange: false,
+            shippingRecalc: false,
+            cardDecline_insufficientFunds: false,
+            cardDecline_suspectedFraud: false,
+            otpFail: false,
+            networkError: false,
+            gasTooLow: false,
+            wrongChain: false,
+            settlementDelay: false,
+            reconciliationMismatch: false
+        };
+        this.rates = {
+            otpDeliveryFailRate: 0.05,
+            networkDropRate: 0.02
+        };
+        this.seed = 42;
+    }
+
+    random() {
+        const x = Math.sin(this.seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
+    shouldTrigger(key) {
+        if (!this.flags[key]) return false;
+        if (!this.flags.randomize) return true;
+        const rate = this.rates[key] || 0.1;
+        return this.random() < rate;
+    }
+
+    applyPreCheckout(contents) {
+        const updated = { ...contents };
+        if (this.shouldTrigger('outOfStock') && updated.items?.length) {
+            updated.items[0].in_stock = false;
+        }
+        if (this.shouldTrigger('priceChange') && updated.items?.length) {
+            updated.items[0].price = Math.round((updated.items[0].price + 7.5) * 100) / 100;
+            updated.subtotal = Math.round(updated.items.reduce((s, it) => s + it.price * (it.quantity || 1), 0) * 100) / 100;
+            updated.tax = Math.round(updated.subtotal * 0.08 * 100) / 100;
+            updated.total = Math.round((updated.subtotal + updated.tax + updated.shipping) * 100) / 100;
+        }
+        if (this.shouldTrigger('shippingRecalc')) {
+            updated.shipping = Math.round((updated.shipping + 3.99) * 100) / 100;
+            updated.total = Math.round((updated.subtotal + updated.tax + updated.shipping) * 100) / 100;
+        }
+        return updated;
+    }
+}
