@@ -922,6 +922,24 @@ class AP2Demo {
         this.addToTimeline('Payment Mandate Created', `Using ${paymentMethod.name}`);
         this.addAgentRequest(`Payment method selected: ${paymentMethod.name}`);
 
+        // Scenario: pre-auth outcomes (declines, network errors)
+        const preAuth = this.scenarioEngine.applyAuth(paymentMandate);
+        if (preAuth?.error) {
+            this.addToTimeline('Payment Error', preAuth.error);
+            this.addAgentRequest(`Payment error: ${preAuth.error}`);
+            alert(`Payment error: ${preAuth.error}. Please try again.`);
+            this.closePaymentModal();
+            return;
+        }
+        if (preAuth?.decline) {
+            const reason = preAuth.decline === '51' ? 'Insufficient funds' : preAuth.decline === '59' ? 'Suspected fraud' : 'Declined';
+            this.addToTimeline('Card Declined', reason);
+            this.addAgentRequest(`Card declined: ${reason}`);
+            alert(`Card declined: ${reason}`);
+            this.closePaymentModal();
+            return;
+        }
+
         // Show OTP step if payment method supports it
         if (paymentMethod.supports_otp) {
             document.getElementById('payment-method-step').classList.add('hidden');
@@ -930,6 +948,17 @@ class AP2Demo {
             this.addAgentRequest('OTP verification required');
         } else {
             // Process crypto payment directly
+            // Scenario: crypto network checks
+            if (paymentMethod.type === 'crypto') {
+                const cryptoRes = this.scenarioEngine.applyCrypto({ method: paymentMethod });
+                if (cryptoRes?.error) {
+                    this.addToTimeline('Crypto Error', cryptoRes.error);
+                    this.addAgentRequest(`Crypto error: ${cryptoRes.error}`);
+                    alert(`Crypto error: ${cryptoRes.error}. Please try again.`);
+                    this.closePaymentModal();
+                    return;
+                }
+            }
             await this.completePayment();
         }
     }
@@ -945,6 +974,13 @@ class AP2Demo {
 
         // Simulate OTP verification
         await this.sleep(1000);
+        const authRes = this.scenarioEngine.applyAuth(this.state.currentMandates.payment);
+        if (authRes?.otp === 'FAILED') {
+            this.addToTimeline('OTP Failed', 'Verification failed');
+            this.addAgentRequest('OTP verification failed');
+            alert('OTP verification failed. Please try again.');
+            return;
+        }
         
         if (otp === '123456' || otp.length === 6) { // Accept any 6-digit code for demo
             this.addToTimeline('OTP Verified', 'Payment authorized');
@@ -970,15 +1006,30 @@ class AP2Demo {
         
         // Generate receipt
         const receipt = document.getElementById('receipt');
+        const tx = {
+            transaction_id: `tx_${this.generateUUID().substring(0, 8)}`,
+            date: new Date().toLocaleDateString(),
+            method: paymentMethod.name,
+            subtotal: cartMandate.contents.subtotal,
+            tax: cartMandate.contents.tax,
+            shipping: cartMandate.contents.shipping,
+            total: cartMandate.contents.total
+        };
+        // Scenario post-auth annotations
+        const post = this.scenarioEngine.applyPostAuth ? this.scenarioEngine.applyPostAuth({ ...tx }) : tx;
+        const settlementNote = post.settlement_eta_minutes ? `<div class="text-secondary">Settlement ETA: ${post.settlement_eta_minutes} minutes</div>` : '';
+        const reconcileNote = post.reconcile_hint ? `<div class="text-secondary">Reconciliation: ${post.reconcile_hint}</div>` : '';
         receipt.innerHTML = `
             <h4 style="margin-bottom: 12px;">Transaction Receipt</h4>
-            <div class="receipt-item"><span>Transaction ID:</span><span>tx_${this.generateUUID().substring(0, 8)}</span></div>
-            <div class="receipt-item"><span>Date:</span><span>${new Date().toLocaleDateString()}</span></div>
-            <div class="receipt-item"><span>Payment Method:</span><span>${paymentMethod.name}</span></div>
-            <div class="receipt-item"><span>Subtotal:</span><span>$${cartMandate.contents.subtotal}</span></div>
-            <div class="receipt-item"><span>Tax:</span><span>$${cartMandate.contents.tax}</span></div>
-            <div class="receipt-item"><span>Shipping:</span><span>$${cartMandate.contents.shipping}</span></div>
-            <div class="receipt-total"><span>Total:</span><span>$${cartMandate.contents.total}</span></div>
+            <div class="receipt-item"><span>Transaction ID:</span><span>${post.transaction_id}</span></div>
+            <div class="receipt-item"><span>Date:</span><span>${post.date}</span></div>
+            <div class="receipt-item"><span>Payment Method:</span><span>${post.method}</span></div>
+            <div class="receipt-item"><span>Subtotal:</span><span>$${post.subtotal}</span></div>
+            <div class="receipt-item"><span>Tax:</span><span>$${post.tax}</span></div>
+            <div class="receipt-item"><span>Shipping:</span><span>$${post.shipping}</span></div>
+            <div class="receipt-total"><span>Total:</span><span>$${post.total}</span></div>
+            ${settlementNote}
+            ${reconcileNote}
         `;
 
         this.addToTimeline('Payment Complete', `$${cartMandate.contents.total} charged successfully`);
